@@ -14,7 +14,7 @@ public class WaterLevelSubsystem {
     public static void main(String[] args) {
         try{
 
-            WldtEngine digitalTwinEngine = new WldtEngine(new WaterLevelSubsystemShadowingFunction("test-shadowing-function"), "water-level-subsystem");
+            WldtEngine digitalTwinEngine = new WldtEngine(new WaterLevelSubsystemShadowingFunction("wls-shadowing-function"), "water-level-subsystem");
 
             digitalTwinEngine.addPhysicalAdapter(getMqttEspPhysicalAdapter());
             digitalTwinEngine.addDigitalAdapter(new DemoDigitalAdapter("test-digital-adapter"));
