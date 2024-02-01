@@ -16,7 +16,7 @@ public class WaterLevelSubsystem {
 
             WldtEngine digitalTwinEngine = new WldtEngine(new WaterLevelSubsystemShadowingFunction("test-shadowing-function"), "water-level-subsystem");
 
-            digitalTwinEngine.addPhysicalAdapter(getWaterLevelSubsystemMqttEspPhysicalAdapter());
+            digitalTwinEngine.addPhysicalAdapter(getMqttEspPhysicalAdapter());
             digitalTwinEngine.addDigitalAdapter(new DemoDigitalAdapter("test-digital-adapter"));
 
             digitalTwinEngine.startLifeCycle();
@@ -26,7 +26,7 @@ public class WaterLevelSubsystem {
         }
     }
 
-    private static MqttPhysicalAdapter getWaterLevelSubsystemMqttEspPhysicalAdapter() throws MqttException, MqttPhysicalAdapterConfigurationException{
+    private static MqttPhysicalAdapter getMqttEspPhysicalAdapter() throws MqttException, MqttPhysicalAdapterConfigurationException{
         MqttPhysicalAdapterConfiguration configuration = 
         MqttPhysicalAdapterConfiguration.builder("test.mosquitto.org",1883,"water-level-subsystem-dt")
                                         .addPhysicalAssetPropertyAndTopic("status", "NORMAL", "subsystems/org.eclipse.ditto:water-level-subsystem/status", status -> {
