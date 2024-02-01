@@ -65,7 +65,7 @@ public class WaterLevelSubsystemShadowingFunction extends ShadowingModelFunction
                         } else if (property.getKey().equals("valve-angle")){
                             this.digitalTwinState.createProperty(new DigitalTwinStateProperty<>(property.getKey(),(Integer) property.getInitialValue()));
                             this.observePhysicalAssetProperty(property);
-                        } else if (property.getKey().equals("green-led") || property.getKey().equals("manual")){
+                        } else if (property.getKey().equals("green-led") || property.getKey().equals("manual") || property.getKey().equals("red-led-on")|| property.getKey().equals("red-led-blinking")){
                             this.digitalTwinState.createProperty(new DigitalTwinStateProperty<>(property.getKey(),(Boolean) property.getInitialValue()));
                             this.observePhysicalAssetProperty(property);
                         }
