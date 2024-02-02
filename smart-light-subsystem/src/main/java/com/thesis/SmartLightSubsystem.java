@@ -36,34 +36,34 @@ public class SmartLightSubsystem {
     }
     
     private static MqttPhysicalAdapter getMqttEspPhysicalAdapter() throws MqttException, MqttPhysicalAdapterConfigurationException{
-        MqttPhysicalAdapterConfiguration configuration = 
-        MqttPhysicalAdapterConfiguration.builder("test.mosquitto.org", 1883,"smart-light-subsystem-dt")
-                                        .addPhysicalAssetPropertyAndTopic("dark", false, "subsystems/org.eclipse.ditto:smart-light-subsystem/dark", dark -> {
-                                            JSONObject obj = new JSONObject(dark);
-                                            return Boolean.parseBoolean(obj.get("dark").toString());
-                                        })
-                                        .addPhysicalAssetPropertyAndTopic("detected", false, "subsystems/org.eclipse.ditto:smart-light-subsystem/detected", detected -> {
-                                            JSONObject obj = new JSONObject(detected);
-                                            return Boolean.parseBoolean(obj.get("detected").toString());
-                                        })
-                                        .addIncomingTopic(new DigitalTwinIncomingTopic("subsystems/org.eclipse.ditto:smart-light-subsystem/light", msg -> {
-                                            JSONObject obj = new JSONObject(msg);
-                                            List<WldtEvent<?>> list = new ArrayList<>();
-                                            try {
-                                                list.add(new PhysicalAssetPropertyWldtEvent<>("smart-light-on",Boolean.parseBoolean(obj.get("on").toString())));
-                                                list.add(new PhysicalAssetPropertyWldtEvent<>("smart-light-waiting",Boolean.parseBoolean(obj.get("waiting").toString())));
-                                                return list;
-                                            } catch (EventBusException e) {
-                                                e.printStackTrace();
-                                            }
-                                            return null; 
-                                        }), List.of(new PhysicalAssetProperty<Boolean>("smart-light-on", false), new PhysicalAssetProperty<Boolean>("smart-light-waiting", false)), Collections.emptyList())
-                                        .addPhysicalAssetPropertyAndTopic("status", "SYS_ON", "subsystems/org.eclipse.ditto:water-level-subsystem/alarm-event", alarm -> {
-                                            JSONObject obj = new JSONObject(alarm);
-                                            Boolean wls_status = Boolean.parseBoolean(obj.get("alarm").toString());
-                                            return wls_status ? "SYS_OFF" : "SYS_ON";
-                                        })
-                                        .build();
+        MqttPhysicalAdapterConfiguration configuration = MqttPhysicalAdapterConfiguration
+			.builder("test.mosquitto.org", 1883,"smart-light-subsystem-dt")
+            .addPhysicalAssetPropertyAndTopic("dark", false, "subsystems/org.eclipse.ditto:smart-light-subsystem/dark", dark -> {
+                JSONObject obj = new JSONObject(dark);
+                return Boolean.parseBoolean(obj.get("dark").toString());
+            })
+            .addPhysicalAssetPropertyAndTopic("detected", false, "subsystems/org.eclipse.ditto:smart-light-subsystem/detected", detected -> {
+                JSONObject obj = new JSONObject(detected);
+                return Boolean.parseBoolean(obj.get("detected").toString());
+            })
+            .addIncomingTopic(new DigitalTwinIncomingTopic("subsystems/org.eclipse.ditto:smart-light-subsystem/light", msg -> {
+                JSONObject obj = new JSONObject(msg);
+                List<WldtEvent<?>> list = new ArrayList<>();
+                try {
+                    	list.add(new PhysicalAssetPropertyWldtEvent<>("smart-light-on",Boolean.parseBoolean(obj.get("on").toString())));
+                        list.add(new PhysicalAssetPropertyWldtEvent<>("smart-light-waiting",Boolean.parseBoolean(obj.get("waiting").toString())));
+                        return list;
+                } catch (EventBusException e) {
+                    e.printStackTrace();
+                }
+                return null; 
+            }), List.of(new PhysicalAssetProperty<Boolean>("smart-light-on", false), new PhysicalAssetProperty<Boolean>("smart-light-waiting", false)), Collections.emptyList())
+            .addPhysicalAssetPropertyAndTopic("status", "SYS_ON", "subsystems/org.eclipse.ditto:water-level-subsystem/alarm-event", alarm -> {
+                JSONObject obj = new JSONObject(alarm);
+                Boolean wls_status = Boolean.parseBoolean(obj.get("alarm").toString());
+                return wls_status ? "SYS_OFF" : "SYS_ON";
+            })
+            .build();
         return new MqttPhysicalAdapter("smart-light-subsystem-mqtt-esp",configuration);
     }
 }
