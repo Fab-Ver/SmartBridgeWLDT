@@ -1,7 +1,0 @@
-package com.thesis.digital.mqtt.topic.incoming;
-
-import it.wldt.adapter.digital.event.DigitalActionWldtEvent;
-import java.util.function.Function;
-
-public interface MqttSubscribeDigitalFunction extends Function<String, DigitalActionWldtEvent<?>> {
-}
