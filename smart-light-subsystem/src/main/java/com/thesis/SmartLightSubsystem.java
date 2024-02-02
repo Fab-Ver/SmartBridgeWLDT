@@ -8,11 +8,11 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.json.JSONObject;
 
 import com.thesis.digital.DemoDigitalAdapter;
-import com.thesis.physical.mqtt.MqttPhysicalAdapter;
-import com.thesis.physical.mqtt.MqttPhysicalAdapterConfiguration;
-import com.thesis.physical.mqtt.exception.MqttPhysicalAdapterConfigurationException;
-import com.thesis.physical.mqtt.topic.incoming.DigitalTwinIncomingTopic;
 
+import it.wldt.adapter.mqtt.physical.MqttPhysicalAdapter;
+import it.wldt.adapter.mqtt.physical.MqttPhysicalAdapterConfiguration;
+import it.wldt.adapter.mqtt.physical.exception.MqttPhysicalAdapterConfigurationException;
+import it.wldt.adapter.mqtt.physical.topic.incoming.DigitalTwinIncomingTopic;
 import it.wldt.adapter.physical.PhysicalAssetProperty;
 import it.wldt.adapter.physical.event.PhysicalAssetPropertyWldtEvent;
 import it.wldt.core.engine.WldtEngine;
