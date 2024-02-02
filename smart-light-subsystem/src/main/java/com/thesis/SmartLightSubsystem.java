@@ -9,6 +9,10 @@ import org.json.JSONObject;
 
 import com.thesis.digital.DemoDigitalAdapter;
 
+import it.wldt.adapter.mqtt.digital.MqttDigitalAdapter;
+import it.wldt.adapter.mqtt.digital.MqttDigitalAdapterConfiguration;
+import it.wldt.adapter.mqtt.digital.exception.MqttDigitalAdapterConfigurationException;
+import it.wldt.adapter.mqtt.digital.topic.MqttQosLevel;
 import it.wldt.adapter.mqtt.physical.MqttPhysicalAdapter;
 import it.wldt.adapter.mqtt.physical.MqttPhysicalAdapterConfiguration;
 import it.wldt.adapter.mqtt.physical.exception.MqttPhysicalAdapterConfigurationException;
@@ -27,6 +31,7 @@ public class SmartLightSubsystem {
 
             digitalTwinEngine.addPhysicalAdapter(getMqttEspPhysicalAdapter());
             digitalTwinEngine.addDigitalAdapter(new DemoDigitalAdapter("test-digital-adapter"));
+			digitalTwinEngine.addDigitalAdapter(getMqttEspDigitalAdapter());
 
             digitalTwinEngine.startLifeCycle();
 
@@ -66,4 +71,17 @@ public class SmartLightSubsystem {
             .build();
         return new MqttPhysicalAdapter("smart-light-subsystem-mqtt-esp",configuration);
     }
+
+	private static MqttDigitalAdapter getMqttEspDigitalAdapter() throws MqttDigitalAdapterConfigurationException, MqttException{
+		MqttDigitalAdapterConfiguration configuration = MqttDigitalAdapterConfiguration
+			.builder("test.mosquitto.org", 1883,"smart-light-subsystem-dt")
+			.addPropertyTopic("status", "subsystems/events/org.eclipse.ditto:smart-light-subsystem", MqttQosLevel.MQTT_QOS_0, status -> {
+				JSONObject obj = new JSONObject();
+				obj.put("path","/features/status/properties/status"); //necessary due to PA's logic 
+				obj.put("value",status);
+				return obj.toString();
+			})
+			.build();
+		return new MqttDigitalAdapter("smart-light-subsystem-mqtt-esp-digital", configuration);
+	}
 }
