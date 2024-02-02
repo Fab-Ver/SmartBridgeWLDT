@@ -9,11 +9,17 @@ import org.json.JSONObject;
 
 import com.thesis.digital.DemoDigitalAdapter;
 
+import it.wldt.adapter.mqtt.digital.MqttDigitalAdapter;
+import it.wldt.adapter.mqtt.digital.MqttDigitalAdapterConfiguration;
+import it.wldt.adapter.mqtt.digital.exception.MqttDigitalAdapterConfigurationException;
+import it.wldt.adapter.mqtt.digital.topic.MqttQosLevel;
 import it.wldt.adapter.mqtt.physical.MqttPhysicalAdapter;
 import it.wldt.adapter.mqtt.physical.MqttPhysicalAdapterConfiguration;
 import it.wldt.adapter.mqtt.physical.exception.MqttPhysicalAdapterConfigurationException;
 import it.wldt.adapter.mqtt.physical.topic.incoming.DigitalTwinIncomingTopic;
+import it.wldt.adapter.physical.PhysicalAssetEvent;
 import it.wldt.adapter.physical.PhysicalAssetProperty;
+import it.wldt.adapter.physical.event.PhysicalAssetEventWldtEvent;
 import it.wldt.adapter.physical.event.PhysicalAssetPropertyWldtEvent;
 import it.wldt.core.engine.WldtEngine;
 import it.wldt.core.event.WldtEvent;
@@ -27,6 +33,7 @@ public class WaterLevelSubsystem {
 
             digitalTwinEngine.addPhysicalAdapter(getMqttEspPhysicalAdapter());
             digitalTwinEngine.addDigitalAdapter(new DemoDigitalAdapter("test-digital-adapter"));
+            digitalTwinEngine.addDigitalAdapter(getMqttEventDigitalAdapter());
 
             digitalTwinEngine.startLifeCycle();
 
@@ -38,10 +45,6 @@ public class WaterLevelSubsystem {
     private static MqttPhysicalAdapter getMqttEspPhysicalAdapter() throws MqttException, MqttPhysicalAdapterConfigurationException{
         MqttPhysicalAdapterConfiguration configuration = 
         MqttPhysicalAdapterConfiguration.builder("test.mosquitto.org",1883,"water-level-subsystem-dt")
-                                        .addPhysicalAssetPropertyAndTopic("status", "NORMAL", "subsystems/org.eclipse.ditto:water-level-subsystem/status", status -> {
-                                            JSONObject obj = new JSONObject(status);
-                                            return obj.get("status").toString();
-                                        })
                                         .addPhysicalAssetPropertyAndTopic("water-distance", 0.0f, "subsystems/org.eclipse.ditto:water-level-subsystem/distance", distance -> {
                                             JSONObject obj = new JSONObject(distance);
                                             return Float.parseFloat(obj.get("distance").toString());
@@ -70,8 +73,32 @@ public class WaterLevelSubsystem {
                                             }
                                             return null; 
                                         }), List.of(new PhysicalAssetProperty<Boolean>("red-led-on", false), new PhysicalAssetProperty<Boolean>("red-led-blinking", false)), Collections.emptyList())
+                                        .addIncomingTopic(new DigitalTwinIncomingTopic("subsystems/org.eclipse.ditto:water-level-subsystem/status", msg -> {
+                                            JSONObject obj = new JSONObject(msg);
+                                            String status = obj.get("status").toString();
+                                            List<WldtEvent<?>> list = new ArrayList<>();
+                                            try {
+                                                list.add(new PhysicalAssetPropertyWldtEvent<>("status",status));
+                                                list.add(new PhysicalAssetEventWldtEvent<>("alarm",status.equals("ALARM")));
+                                                return list;
+                                            } catch (EventBusException e) {
+                                                e.printStackTrace();
+                                            }
+                                            return null;
+                                        }), List.of(new PhysicalAssetProperty<String>("status", "NORMAL")), List.of(new PhysicalAssetEvent("alarm","boolean")))
                                         .build();
-        
         return new MqttPhysicalAdapter("water-level-subsystem-mqtt-esp",configuration);
+    }
+
+    private static MqttDigitalAdapter getMqttEventDigitalAdapter() throws MqttException, MqttDigitalAdapterConfigurationException{
+        MqttDigitalAdapterConfiguration configuration = 
+        MqttDigitalAdapterConfiguration.builder("test.mosquitto.org", 1883,"water-level-subsystem-dt")
+                                       .addEventNotificationTopic("alarm", "subsystems/org.eclipse.ditto:water-level-subsystem/alarm-event", MqttQosLevel.MQTT_QOS_0, event -> {
+                                        JSONObject obj = new JSONObject();
+                                        obj.append("alarm", Boolean.parseBoolean(event.toString()));
+                                        return obj.toString();
+                                       })
+                                       .build();
+        return new MqttDigitalAdapter("water-level-subsystem-mqtt-event", configuration);
     }
 }
