@@ -56,8 +56,14 @@ public class SmartLightShadowingFunction extends ShadowingModelFunction {
                     try {
 
                         //Create and write the property on the DT's State
-                        this.digitalTwinState.createProperty(new DigitalTwinStateProperty<>(property.getKey(), property.getInitialValue()));
-                        this.observePhysicalAssetProperty(property);
+                        if(property.getKey().equals("dark") || property.getKey().equals("detected")  || property.getKey().equals("smart-light-on") || property.getKey().equals("smart-light-waiting")){
+                            this.digitalTwinState.createProperty(new DigitalTwinStateProperty<>(property.getKey(), (Boolean) property.getInitialValue()));
+                            this.observePhysicalAssetProperty(property);
+                        } else if (property.getKey().equals("status")){
+                            this.digitalTwinState.createProperty(new DigitalTwinStateProperty<>(property.getKey(), (String) property.getInitialValue()));
+                            this.observePhysicalAssetProperty(property);
+                        }
+                        
 
                         //Start observing the variation of the physical property in order to receive notifications
                         //Without this call the Shadowing Function will not receive any notifications or callback about
