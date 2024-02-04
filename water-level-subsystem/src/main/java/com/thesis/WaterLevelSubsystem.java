@@ -86,6 +86,22 @@ public class WaterLevelSubsystem {
                     }
                     return null;
                     }), List.of(new PhysicalAssetProperty<String>("status", "NORMAL")), List.of(new PhysicalAssetEvent("alarm","boolean")))
+                .addPhysicalAssetActionAndTopic("manual", "pa-action", "application/json", "subsystems/messages/org.eclipse.ditto:water-level-subsystem", action -> {
+                    JSONObject obj = new JSONObject(action);
+                    JSONObject msg = new JSONObject();
+                    JSONObject value = new JSONObject();
+                    //Message structure necessary due to PA's logic 
+                    if(obj.has("manual")){
+                        msg.put("path", "");
+                        value.put("manual",obj.get("manual"));
+                        msg.put("value", value.toString());
+                    } else if (obj.has("angle")){
+                        msg.put("path", "");
+                        value.put("angle",obj.get("angle"));
+                        msg.put("value", value.toString());
+                    }
+                    return msg.toString();
+                })
                 .build();
         return new MqttPhysicalAdapter("water-level-subsystem-mqtt-esp",configuration);
     }
