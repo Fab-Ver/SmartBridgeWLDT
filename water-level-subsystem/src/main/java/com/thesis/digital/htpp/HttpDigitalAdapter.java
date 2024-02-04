@@ -3,7 +3,11 @@ package com.thesis.digital.htpp;
 import java.util.stream.Collectors;
 
 import io.undertow.Undertow;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.RoutingHandler;
+import io.undertow.server.handlers.error.SimpleErrorPageHandler;
 import io.undertow.util.Headers;
+import io.undertow.util.Methods;
 import it.wldt.adapter.digital.DigitalAdapter;
 import it.wldt.core.state.DigitalTwinStateAction;
 import it.wldt.core.state.DigitalTwinStateEvent;
@@ -31,8 +35,7 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
 
     @Override
     protected void onStateChangePropertyCreated(DigitalTwinStateProperty digitalTwinStateProperty) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangePropertyCreated'");
+        
     }
 
     @Override
@@ -43,8 +46,7 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
 
     @Override
     protected void onStateChangePropertyDeleted(DigitalTwinStateProperty digitalTwinStateProperty) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangePropertyDeleted'");
+
     }
 
     @Override
@@ -55,83 +57,70 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
 
     @Override
     protected void onStatePropertyDeleted(DigitalTwinStateProperty digitalTwinStateProperty) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStatePropertyDeleted'");
+
     }
 
     @Override
     protected void onStateChangeActionEnabled(DigitalTwinStateAction digitalTwinStateAction) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangeActionEnabled'");
+
     }
 
     @Override
     protected void onStateChangeActionUpdated(DigitalTwinStateAction digitalTwinStateAction) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangeActionUpdated'");
+       
     }
 
     @Override
     protected void onStateChangeActionDisabled(DigitalTwinStateAction digitalTwinStateAction) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangeActionDisabled'");
+        
     }
 
     @Override
     protected void onStateChangeEventRegistered(DigitalTwinStateEvent digitalTwinStateEvent) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangeEventRegistered'");
+        
     }
 
     @Override
     protected void onStateChangeEventRegistrationUpdated(DigitalTwinStateEvent digitalTwinStateEvent) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangeEventRegistrationUpdated'");
+        
     }
 
     @Override
     protected void onStateChangeEventUnregistered(DigitalTwinStateEvent digitalTwinStateEvent) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangeEventUnregistered'");
+
     }
 
     @Override
-    protected void onDigitalTwinStateEventNotificationReceived(
-            DigitalTwinStateEventNotification digitalTwinStateEventNotification) {
+    protected void onDigitalTwinStateEventNotificationReceived(DigitalTwinStateEventNotification digitalTwinStateEventNotification) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'onDigitalTwinStateEventNotificationReceived'");
     }
 
     @Override
     protected void onStateChangeRelationshipCreated(DigitalTwinStateRelationship digitalTwinStateRelationship) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangeRelationshipCreated'");
+    
     }
 
     @Override
     protected void onStateChangeRelationshipInstanceCreated(DigitalTwinStateRelationshipInstance digitalTwinStateRelationshipInstance) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangeRelationshipInstanceCreated'");
+        
     }
 
     @Override
     protected void onStateChangeRelationshipDeleted(DigitalTwinStateRelationship digitalTwinStateRelationship) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangeRelationshipDeleted'");
+        
     }
 
     @Override
-    protected void onStateChangeRelationshipInstanceDeleted(
-            DigitalTwinStateRelationshipInstance digitalTwinStateRelationshipInstance) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangeRelationshipInstanceDeleted'");
+    protected void onStateChangeRelationshipInstanceDeleted(DigitalTwinStateRelationshipInstance digitalTwinStateRelationshipInstance) {
+
     }
 
     @Override
     public void onAdapterStart() {
         this.server = Undertow.builder()
             .addHttpListener(getConfiguration().getPort(), getConfiguration().getHost())
-            .setHandler(exchange -> {exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain"); exchange.getResponseSender().send("Hello Baeldung");})
+            .setHandler(getActioHandler())
             .build();
         server.start();
         logger.info("HTTP Digital Adapter Started");
@@ -185,6 +174,29 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
     @Override
     public void onDigitalTwinDestroy() {
 
+    }
+
+    private HttpHandler getActioHandler(){
+        RoutingHandler routingHandler = new RoutingHandler();
+        routingHandler.setFallbackHandler(new SimpleErrorPageHandler());
+        routingHandler.setInvalidMethodHandler(new SimpleErrorPageHandler());
+
+        getConfiguration().getActionRoutes().forEach((key,route) -> {
+            routingHandler.add(Methods.POST, route + "/" + key, exchange -> {
+                exchange.getRequestReceiver().receiveFullBytes((e, requestBody) -> {
+                    try {
+                        publishDigitalActionWldtEvent(key, new String(requestBody));
+                        exchange.setStatusCode(200);
+                        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+                        exchange.getResponseSender().send("Action Request received successfully");
+                    } catch (EventBusException e1) {
+                        e1.printStackTrace();
+                    }
+                    
+                });
+            });
+        });
+        return routingHandler;
     }
     
 }

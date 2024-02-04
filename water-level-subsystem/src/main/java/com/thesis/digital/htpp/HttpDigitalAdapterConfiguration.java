@@ -1,12 +1,17 @@
 package com.thesis.digital.htpp;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.thesis.digital.htpp.exception.HttpDigitalAdapterConfigurationException;
 
 
 public class HttpDigitalAdapterConfiguration {
     
     private final String host;
-    private final Integer port;
+    private final int port;
+
+    private final Map<String, String> actionRoutes = new HashMap<>();
     
     protected HttpDigitalAdapterConfiguration(int port, String host) {
         this.host = host;
@@ -25,6 +30,12 @@ public class HttpDigitalAdapterConfiguration {
         return port;
     }
 
+    protected void addActionRoute(String actionKey, String actionRoute){
+        this.actionRoutes.put(actionKey, actionRoute);
+    }
 
+    public Map<String,String> getActionRoutes() {
+        return actionRoutes;
+    }
 
 }

@@ -8,6 +8,9 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.json.JSONObject;
 
 import com.thesis.digital.DemoDigitalAdapter;
+import com.thesis.digital.htpp.HttpDigitalAdapter;
+import com.thesis.digital.htpp.HttpDigitalAdapterConfiguration;
+import com.thesis.digital.htpp.exception.HttpDigitalAdapterConfigurationException;
 
 import it.wldt.adapter.mqtt.digital.MqttDigitalAdapter;
 import it.wldt.adapter.mqtt.digital.MqttDigitalAdapterConfiguration;
@@ -34,6 +37,7 @@ public class WaterLevelSubsystem {
             digitalTwinEngine.addPhysicalAdapter(getMqttEspPhysicalAdapter());
             digitalTwinEngine.addDigitalAdapter(new DemoDigitalAdapter("test-digital-adapter"));
             digitalTwinEngine.addDigitalAdapter(getMqttEventDigitalAdapter());
+            digitalTwinEngine.addDigitalAdapter(getHttpDigitalAdapter());
 
             digitalTwinEngine.startLifeCycle();
 
@@ -87,7 +91,7 @@ public class WaterLevelSubsystem {
                     return null;
                     }), List.of(new PhysicalAssetProperty<String>("status", "NORMAL")), List.of(new PhysicalAssetEvent("alarm","boolean")))
                 .addPhysicalAssetActionAndTopic("manual", "pa-action", "application/json", "subsystems/messages/org.eclipse.ditto:water-level-subsystem", action -> {
-                    JSONObject obj = new JSONObject(action);
+                    JSONObject obj = new JSONObject(action.toString());
                     JSONObject msg = new JSONObject();
                     JSONObject value = new JSONObject();
                     //Message structure necessary due to PA's logic 
@@ -116,5 +120,13 @@ public class WaterLevelSubsystem {
                 })
                 .build();
         return new MqttDigitalAdapter("water-level-subsystem-mqtt-event", configuration);
+    }
+
+    private static HttpDigitalAdapter getHttpDigitalAdapter() throws HttpDigitalAdapterConfigurationException {
+        HttpDigitalAdapterConfiguration configuration = HttpDigitalAdapterConfiguration
+            .builder(8080, "localhost")
+            .addActionRoute("manual", "water-level-subsystem")
+            .build();
+        return new HttpDigitalAdapter("water-level-subsystem-http", configuration);
     }
 }
