@@ -2,10 +2,6 @@ package com.thesis.digital;
 
 import it.wldt.adapter.digital.DigitalAdapter;
 import it.wldt.core.state.*;
-import it.wldt.exception.EventBusException;
-
-import java.util.Random;
-import java.util.stream.Collectors;
 
 /**
  * Authors:
