@@ -6,6 +6,7 @@ import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.RoutingHandler;
 import io.undertow.server.handlers.error.SimpleErrorPageHandler;
+import io.undertow.server.handlers.sse.ServerSentEventHandler;
 import io.undertow.util.Headers;
 import io.undertow.util.Methods;
 import it.wldt.adapter.digital.DigitalAdapter;
@@ -29,6 +30,8 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
      */
     private Undertow server;
 
+    private ServerSentEventHandler sseHandler = new ServerSentEventHandler();
+
     public HttpDigitalAdapter(String id, HttpDigitalAdapterConfiguration configuration) {
         super(id, configuration);
     }
@@ -40,8 +43,9 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
 
     @Override
     protected void onStateChangePropertyUpdated(DigitalTwinStateProperty digitalTwinStateProperty) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStateChangePropertyUpdated'");
+        sseHandler.getConnections().forEach(i -> {
+            i.send(digitalTwinStateProperty.toString());
+        });
     }
 
     @Override
@@ -51,8 +55,7 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
 
     @Override
     protected void onStatePropertyUpdated(DigitalTwinStateProperty digitalTwinStateProperty) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onStatePropertyUpdated'");
+        logger.info("HTTP Digital Adapter({}) received property update", this.getId());
     }
 
     @Override
@@ -92,8 +95,7 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
 
     @Override
     protected void onDigitalTwinStateEventNotificationReceived(DigitalTwinStateEventNotification digitalTwinStateEventNotification) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onDigitalTwinStateEventNotificationReceived'");
+
     }
 
     @Override
@@ -120,7 +122,7 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
     public void onAdapterStart() {
         this.server = Undertow.builder()
             .addHttpListener(getConfiguration().getPort(), getConfiguration().getHost())
-            .setHandler(getActioHandler())
+            .setHandler(getActionHandler())
             .build();
         server.start();
         logger.info("HTTP Digital Adapter Started");
@@ -176,11 +178,10 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
 
     }
 
-    private HttpHandler getActioHandler(){
+    private HttpHandler getActionHandler(){
         RoutingHandler routingHandler = new RoutingHandler();
         routingHandler.setFallbackHandler(new SimpleErrorPageHandler());
         routingHandler.setInvalidMethodHandler(new SimpleErrorPageHandler());
-
         getConfiguration().getActionRoutes().forEach((key,route) -> {
             routingHandler.add(Methods.POST, route + "/" + key, exchange -> {
                 exchange.getRequestReceiver().receiveFullBytes((e, requestBody) -> {
@@ -196,6 +197,7 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
                 });
             });
         });
+        routingHandler.add(Methods.GET, "/sse", sseHandler);
         return routingHandler;
     }
     
