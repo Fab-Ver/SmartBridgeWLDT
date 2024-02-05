@@ -8,6 +8,9 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.json.JSONObject;
 
 import com.thesis.digital.DemoDigitalAdapter;
+import com.thesis.digital.htpp.HttpDigitalAdapter;
+import com.thesis.digital.htpp.HttpDigitalAdapterConfiguration;
+import com.thesis.digital.htpp.exception.HttpDigitalAdapterConfigurationException;
 
 import it.wldt.adapter.mqtt.digital.MqttDigitalAdapter;
 import it.wldt.adapter.mqtt.digital.MqttDigitalAdapterConfiguration;
@@ -32,6 +35,7 @@ public class SmartLightSubsystem {
             digitalTwinEngine.addPhysicalAdapter(getMqttEspPhysicalAdapter());
             digitalTwinEngine.addDigitalAdapter(new DemoDigitalAdapter("test-digital-adapter"));
 			digitalTwinEngine.addDigitalAdapter(getMqttEspDigitalAdapter());
+            digitalTwinEngine.addDigitalAdapter(getHttpDigitalAdapter());
 
             digitalTwinEngine.startLifeCycle();
 
@@ -84,4 +88,12 @@ public class SmartLightSubsystem {
 			.build();
 		return new MqttDigitalAdapter("smart-light-subsystem-mqtt-esp-digital", configuration);
 	}
+
+    private static HttpDigitalAdapter getHttpDigitalAdapter() throws HttpDigitalAdapterConfigurationException {
+        HttpDigitalAdapterConfiguration configuration = HttpDigitalAdapterConfiguration
+            .builder(8081, "localhost")
+            .addPropertySSERoute(List.of("status","dark","detected","smart-light-on","smart-light-waiting"), "smart-light-subsystem/sse")
+            .build();
+        return new HttpDigitalAdapter("smart-light-subsystem-http", configuration);
+    }
 }
