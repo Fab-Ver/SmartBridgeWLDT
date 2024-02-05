@@ -1,5 +1,8 @@
 package com.thesis.digital.htpp;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.undertow.Undertow;
@@ -18,6 +21,8 @@ import it.wldt.core.state.DigitalTwinStateRelationship;
 import it.wldt.core.state.DigitalTwinStateRelationshipInstance;
 import it.wldt.core.state.IDigitalTwinState;
 import it.wldt.exception.EventBusException;
+
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +35,7 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
      */
     private Undertow server;
 
-    private ServerSentEventHandler sseHandler = new ServerSentEventHandler();
+    private Map<ServerSentEventHandler, List<String>> sseHandlers = new HashMap<>();
 
     public HttpDigitalAdapter(String id, HttpDigitalAdapterConfiguration configuration) {
         super(id, configuration);
@@ -43,8 +48,16 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
 
     @Override
     protected void onStateChangePropertyUpdated(DigitalTwinStateProperty digitalTwinStateProperty) {
-        sseHandler.getConnections().forEach(i -> {
-            i.send(digitalTwinStateProperty.toString());
+        JSONObject obj = new JSONObject();
+        obj.put("platform", "wldt");
+        obj.put(digitalTwinStateProperty.getKey(),digitalTwinStateProperty.getValue());
+
+        sseHandlers.forEach((handler, keys) -> {
+            if(keys.contains(digitalTwinStateProperty.getKey())){
+                handler.getConnections().forEach(connection -> {
+                    connection.send(obj.toString());
+                });
+            }
         });
     }
 
@@ -122,7 +135,7 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
     public void onAdapterStart() {
         this.server = Undertow.builder()
             .addHttpListener(getConfiguration().getPort(), getConfiguration().getHost())
-            .setHandler(getActionHandler())
+            .setHandler(getHandler())
             .build();
         server.start();
         logger.info("HTTP Digital Adapter Started");
@@ -178,10 +191,14 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
 
     }
 
-    private HttpHandler getActionHandler(){
+    private HttpHandler getHandler(){
         RoutingHandler routingHandler = new RoutingHandler();
         routingHandler.setFallbackHandler(new SimpleErrorPageHandler());
         routingHandler.setInvalidMethodHandler(new SimpleErrorPageHandler());
+
+        /**
+         * Add actions handlers
+         */
         getConfiguration().getActionRoutes().forEach((key,route) -> {
             routingHandler.add(Methods.POST, route + "/" + key, exchange -> {
                 exchange.getRequestReceiver().receiveFullBytes((e, requestBody) -> {
@@ -197,7 +214,15 @@ public class HttpDigitalAdapter extends DigitalAdapter<HttpDigitalAdapterConfigu
                 });
             });
         });
-        routingHandler.add(Methods.GET, "/sse", sseHandler);
+
+        /**
+         * Add properties SSE handlers
+         */
+        getConfiguration().getPropertiesSse().forEach((route, keys) -> {
+            ServerSentEventHandler sseHandler = new ServerSentEventHandler();
+            routingHandler.add(Methods.GET, route, sseHandler);
+            sseHandlers.put(sseHandler, keys);
+        });
         return routingHandler;
     }
     
