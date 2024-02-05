@@ -98,11 +98,11 @@ public class WaterLevelSubsystem {
                     if(obj.has("manual")){
                         msg.put("path", "");
                         value.put("manual",obj.get("manual"));
-                        msg.put("value", value.toString());
+                        msg.put("value", value);
                     } else if (obj.has("angle")){
                         msg.put("path", "");
                         value.put("angle",obj.get("angle"));
-                        msg.put("value", value.toString());
+                        msg.put("value", value);
                     }
                     return msg.toString();
                 })
@@ -126,6 +126,7 @@ public class WaterLevelSubsystem {
         HttpDigitalAdapterConfiguration configuration = HttpDigitalAdapterConfiguration
             .builder(8080, "localhost")
             .addActionRoute("manual", "water-level-subsystem")
+            .addPropertySSERoute(List.of("status","water-distance","manual","red-led-on","red-led-blinking","green-led","valve-angle"), "water-level-subsystem/sse")
             .build();
         return new HttpDigitalAdapter("water-level-subsystem-http", configuration);
     }
